@@ -150,7 +150,9 @@ export default function Reservation() {
           </h1>
         </div>
 
-        <ScheduleXCalendar calendarApp={calendar} />
+        <div style={{ height: 'clamp(480px, 70vh, 700px)', width: '100%' }}>
+          <ScheduleXCalendar calendarApp={calendar} />
+        </div>
 
         <p className="font-body text-charcoal m-0" style={{ marginTop: '1.5rem', fontSize: '0.8rem', opacity: 0.5 }}>
           Cliquez sur un jour disponible pour démarrer votre demande de réservation.
