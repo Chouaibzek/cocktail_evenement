@@ -102,11 +102,41 @@ export default function Reservation() {
           text-transform: uppercase;
           color: #B5785A;
         }
+        /* Mobile */
+        .sx__calendar-wrapper {
+          min-width: 0 !important;
+          width: 100% !important;
+        }
+        .sx__month-grid {
+          min-width: 0 !important;
+        }
+        .sx__month-grid-day {
+          min-width: 0 !important;
+          overflow: hidden;
+        }
+        @media (max-width: 480px) {
+          .sx__month-grid-day__header-date {
+            font-size: 0.7rem;
+          }
+          .sx__month-grid-day__header-day-name {
+            font-size: 0.55rem;
+            letter-spacing: 0.05em;
+          }
+          .sx__event-title {
+            font-size: 0.55rem;
+          }
+        }
       `}</style>
 
       <main
-        className="px-8 md:px-12 lg:px-24 mx-auto"
-        style={{ maxWidth: '1200px', paddingTop: '8rem', paddingBottom: '6rem' }}
+        className="mx-auto"
+        style={{
+          maxWidth: '1200px',
+          paddingTop: '7rem',
+          paddingBottom: '6rem',
+          paddingLeft: 'clamp(1.25rem, 5vw, 6rem)',
+          paddingRight: 'clamp(1.25rem, 5vw, 6rem)',
+        }}
       >
         <div className="flex flex-col" style={{ gap: '1rem', marginBottom: '3rem' }}>
           <p className="font-body text-accent m-0" style={{ fontSize: '0.65rem', letterSpacing: '0.28em' }}>

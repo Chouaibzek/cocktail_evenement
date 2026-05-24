@@ -16,8 +16,14 @@ export default function Catalogue() {
       <Navbar />
 
       <main
-        className="px-8 md:px-12 lg:px-24 mx-auto"
-        style={{ maxWidth: '1200px', paddingTop: '8rem', paddingBottom: '6rem' }}
+        className="mx-auto"
+        style={{
+          maxWidth: '1200px',
+          paddingTop: '7rem',
+          paddingBottom: '6rem',
+          paddingLeft: 'clamp(1.25rem, 5vw, 6rem)',
+          paddingRight: 'clamp(1.25rem, 5vw, 6rem)',
+        }}
       >
         {/* Header */}
         <div className="flex flex-col" style={{ gap: '1rem', marginBottom: '3.5rem' }}>
@@ -61,7 +67,7 @@ export default function Catalogue() {
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(min(300px, 100%), 1fr))',
             gap: '2rem',
           }}
         >

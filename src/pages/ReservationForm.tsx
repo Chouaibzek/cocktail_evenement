@@ -99,7 +99,7 @@ export default function ReservationForm() {
     return (
       <div className="bg-cream min-h-screen">
         <Navbar />
-        <main className="px-8 mx-auto flex items-center justify-center" style={{ minHeight: '100vh' }}>
+        <main className="mx-auto flex items-center justify-center" style={{ minHeight: '100vh', paddingLeft: 'clamp(1.25rem, 5vw, 2rem)', paddingRight: 'clamp(1.25rem, 5vw, 2rem)' }}>
           <p className="font-body text-charcoal">
             Aucune date sélectionnée.{' '}
             <Link to="/reservation" className="text-accent">Retour au calendrier</Link>
@@ -113,7 +113,16 @@ export default function ReservationForm() {
     <div className="bg-cream min-h-screen">
       <Navbar />
 
-      <main className="px-8 mx-auto" style={{ maxWidth: '560px', paddingTop: '8rem', paddingBottom: '4rem' }}>
+      <main
+        className="mx-auto"
+        style={{
+          maxWidth: '560px',
+          paddingTop: '7rem',
+          paddingBottom: '4rem',
+          paddingLeft: 'clamp(1.25rem, 5vw, 2rem)',
+          paddingRight: 'clamp(1.25rem, 5vw, 2rem)',
+        }}
+      >
 
         {success ? (
           /* ── Confirmation ── */
