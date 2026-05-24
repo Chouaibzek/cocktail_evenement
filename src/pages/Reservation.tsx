@@ -1,161 +1,225 @@
-import { useEffect, useRef, useState } from 'react'
-import { useCalendarApp, ScheduleXCalendar } from '@schedule-x/react'
-import { createViewMonthGrid } from '@schedule-x/calendar'
-import '@schedule-x/theme-default/dist/index.css'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth'
 import { supabase } from '../lib/supabase'
 import Navbar from '../components/Navbar'
 
+const JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+const MOIS = [
+  'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+  'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+]
+
+function toYMD(year: number, month: number, day: number) {
+  return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`
+}
+
+function buildCalendarDays(year: number, month: number) {
+  const firstDay = new Date(year, month, 1).getDay()
+  // Lundi = 0 … Dimanche = 6
+  const offset = (firstDay + 6) % 7
+  const daysInMonth = new Date(year, month + 1, 0).getDate()
+  const cells: (number | null)[] = []
+  for (let i = 0; i < offset; i++) cells.push(null)
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d)
+  while (cells.length % 7 !== 0) cells.push(null)
+  return cells
+}
+
 export default function Reservation() {
   const navigate = useNavigate()
   const { user } = useAuth()
 
-  const [unavailableDates, setUnavailableDates] = useState<Set<string>>(new Set())
-  const unavailableRef = useRef<Set<string>>(new Set())
+  const today = new Date()
+  const [year, setYear] = useState(today.getFullYear())
+  const [month, setMonth] = useState(today.getMonth())
+  const [unavailable, setUnavailable] = useState<Set<string>>(new Set())
 
   useEffect(() => {
-    async function fetchUnavailable() {
+    async function fetch() {
       const [{ data: blocked }, { data: reserved }] = await Promise.all([
         supabase.from('disponibilites').select('date').eq('statut', 'bloque'),
         supabase.from('reservations').select('date').neq('statut', 'annulée'),
       ])
-      const dates = new Set<string>([
-        ...(blocked  ?? []).map((d: { date: string }) => d.date),
+      setUnavailable(new Set<string>([
+        ...(blocked ?? []).map((d: { date: string }) => d.date),
         ...(reserved ?? []).map((d: { date: string }) => d.date),
-      ])
-      setUnavailableDates(dates)
-      unavailableRef.current = dates
+      ]))
     }
-    fetchUnavailable()
+    fetch()
   }, [])
 
-  const calendar = useCalendarApp({
-    views: [createViewMonthGrid()],
-    locale: 'fr-FR',
-    events: [],
-    calendars: {
-      indisponible: {
-        colorName: 'indisponible',
-        lightColors: {
-          main:        'rgba(26,23,20,0.35)',
-          container:   'rgba(26,23,20,0.07)',
-          onContainer: 'rgba(26,23,20,0.4)',
-        },
-      },
-    },
-    callbacks: {
-      onClickDate(date: string) {
-        if (unavailableRef.current.has(date)) return
-        if (!user) {
-          navigate(`/login?redirect=/reservation/formulaire?date=${date}`)
-        } else {
-          navigate(`/reservation/formulaire?date=${date}`)
-        }
-      },
-    },
-  })
+  const prevMonth = () => {
+    if (month === 0) { setMonth(11); setYear(y => y - 1) }
+    else setMonth(m => m - 1)
+  }
+  const nextMonth = () => {
+    if (month === 11) { setMonth(0); setYear(y => y + 1) }
+    else setMonth(m => m + 1)
+  }
 
-  // Inject unavailable dates as events once data is loaded
-  useEffect(() => {
-    if (unavailableDates.size === 0) return
-    calendar?.events.set(
-      [...unavailableDates].map(date => ({
-        id:         `unavailable-${date}`,
-        title:      'Non disponible',
-        start:      `${date} 00:00`,
-        end:        `${date} 23:59`,
-        calendarId: 'indisponible',
-      }))
-    )
-  }, [unavailableDates])
+  const handleDay = (day: number) => {
+    const date = toYMD(year, month, day)
+    const isPast = new Date(year, month, day) < new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    if (isPast || unavailable.has(date)) return
+    if (!user) {
+      navigate(`/login?redirect=/reservation/formulaire?date=${date}`)
+    } else {
+      navigate(`/reservation/formulaire?date=${date}`)
+    }
+  }
+
+  const cells = buildCalendarDays(year, month)
+  const todayYMD = toYMD(today.getFullYear(), today.getMonth(), today.getDate())
 
   return (
     <div className="bg-cream min-h-screen">
       <Navbar />
 
-      <style>{`
-        .sx__month-grid-day.is-leading-or-trailing {
-          pointer-events: none;
-        }
-        .sx__month-grid-day.is-leading-or-trailing .sx__month-grid-day__header-date {
-          visibility: hidden;
-        }
-        .sx__month-grid-day:not(.is-leading-or-trailing) {
-          cursor: pointer;
-          transition: background 0.15s ease;
-        }
-        .sx__month-grid-day:not(.is-leading-or-trailing):hover {
-          background: rgba(181, 120, 90, 0.08);
-        }
-        .sx__month-grid-day.sx__selected-day {
-          background: rgba(181, 120, 90, 0.15);
-        }
-        .sx__calendar-wrapper {
-          background: transparent;
-          border: 1px solid rgba(26, 23, 20, 0.12);
-        }
-        .sx__month-grid-day__header-day-name {
-          font-family: 'DM Sans', sans-serif;
-          font-size: 0.65rem;
-          letter-spacing: 0.15em;
-          text-transform: uppercase;
-          color: #B5785A;
-        }
-        /* Mobile */
-        .sx__calendar-wrapper {
-          min-width: 0 !important;
-          width: 100% !important;
-        }
-        .sx__month-grid {
-          min-width: 0 !important;
-        }
-        .sx__month-grid-day {
-          min-width: 0 !important;
-          overflow: hidden;
-        }
-        @media (max-width: 480px) {
-          .sx__month-grid-day__header-date {
-            font-size: 0.7rem;
-          }
-          .sx__month-grid-day__header-day-name {
-            font-size: 0.55rem;
-            letter-spacing: 0.05em;
-          }
-          .sx__event-title {
-            font-size: 0.55rem;
-          }
-        }
-      `}</style>
-
       <main
         className="mx-auto"
         style={{
-          maxWidth: '1200px',
+          maxWidth: '720px',
           paddingTop: '7rem',
           paddingBottom: '6rem',
-          paddingLeft: 'clamp(1.25rem, 5vw, 6rem)',
-          paddingRight: 'clamp(1.25rem, 5vw, 6rem)',
+          paddingLeft: 'clamp(1.25rem, 5vw, 3rem)',
+          paddingRight: 'clamp(1.25rem, 5vw, 3rem)',
         }}
       >
+        {/* Header */}
         <div className="flex flex-col" style={{ gap: '1rem', marginBottom: '3rem' }}>
           <p className="font-body text-accent m-0" style={{ fontSize: '0.65rem', letterSpacing: '0.28em' }}>
             — RÉSERVATION
           </p>
           <h1
             className="font-display italic text-charcoal m-0"
-            style={{ fontSize: 'clamp(2.5rem, 4vw, 3.5rem)', lineHeight: 1.1 }}
+            style={{ fontSize: 'clamp(2.2rem, 4vw, 3.5rem)', lineHeight: 1.1 }}
           >
             Choisissez une date
           </h1>
         </div>
 
-        <div style={{ height: 'clamp(480px, 70vh, 700px)', width: '100%' }}>
-          <ScheduleXCalendar calendarApp={calendar} />
+        {/* Calendrier */}
+        <div style={{ border: '1px solid rgba(26,23,20,0.12)', background: '#fff' }}>
+
+          {/* Navigation mois */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '1.25rem 1.5rem',
+              borderBottom: '1px solid rgba(26,23,20,0.08)',
+            }}
+          >
+            <button
+              onClick={prevMonth}
+              className="font-body text-charcoal bg-transparent border-none cursor-pointer"
+              style={{ fontSize: '1.1rem', opacity: 0.5, padding: '0.25rem 0.5rem', lineHeight: 1 }}
+            >
+              ←
+            </button>
+            <span className="font-display italic text-charcoal" style={{ fontSize: '1.3rem' }}>
+              {MOIS[month]} {year}
+            </span>
+            <button
+              onClick={nextMonth}
+              className="font-body text-charcoal bg-transparent border-none cursor-pointer"
+              style={{ fontSize: '1.1rem', opacity: 0.5, padding: '0.25rem 0.5rem', lineHeight: 1 }}
+            >
+              →
+            </button>
+          </div>
+
+          {/* Jours de la semaine */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+            {JOURS.map(j => (
+              <div
+                key={j}
+                className="font-body text-accent"
+                style={{
+                  textAlign: 'center',
+                  fontSize: '0.58rem',
+                  letterSpacing: '0.15em',
+                  padding: '0.75rem 0',
+                  borderBottom: '1px solid rgba(26,23,20,0.08)',
+                }}
+              >
+                {j.toUpperCase()}
+              </div>
+            ))}
+          </div>
+
+          {/* Cellules */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+            {cells.map((day, i) => {
+              if (day === null) {
+                return <div key={`empty-${i}`} style={{ aspectRatio: '1', borderBottom: '1px solid rgba(26,23,20,0.05)', borderRight: i % 7 !== 6 ? '1px solid rgba(26,23,20,0.05)' : 'none' }} />
+              }
+              const ymd = toYMD(year, month, day)
+              const isUnavailable = unavailable.has(ymd)
+              const isPast = new Date(year, month, day) < new Date(today.getFullYear(), today.getMonth(), today.getDate())
+              const isToday = ymd === todayYMD
+              const disabled = isUnavailable || isPast
+
+              return (
+                <button
+                  key={day}
+                  onClick={() => !disabled && handleDay(day)}
+                  className="font-body"
+                  style={{
+                    aspectRatio: '1',
+                    border: 'none',
+                    borderBottom: '1px solid rgba(26,23,20,0.05)',
+                    borderRight: i % 7 !== 6 ? '1px solid rgba(26,23,20,0.05)' : 'none',
+                    background: isUnavailable ? 'rgba(26,23,20,0.04)' : 'transparent',
+                    color: disabled ? 'rgba(26,23,20,0.2)' : '#1A1714',
+                    cursor: disabled ? 'default' : 'pointer',
+                    fontSize: 'clamp(0.75rem, 2vw, 0.9rem)',
+                    fontWeight: isToday ? 500 : 400,
+                    position: 'relative',
+                    transition: 'background 0.15s ease',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onMouseEnter={e => { if (!disabled) e.currentTarget.style.background = 'rgba(181,120,90,0.1)' }}
+                  onMouseLeave={e => { if (!disabled) e.currentTarget.style.background = isUnavailable ? 'rgba(26,23,20,0.04)' : 'transparent' }}
+                >
+                  {/* Point "aujourd'hui" */}
+                  {isToday && (
+                    <span style={{
+                      position: 'absolute',
+                      bottom: '15%',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '3px',
+                      height: '3px',
+                      borderRadius: '50%',
+                      background: '#B5785A',
+                    }} />
+                  )}
+                  {day}
+                </button>
+              )
+            })}
+          </div>
         </div>
 
-        <p className="font-body text-charcoal m-0" style={{ marginTop: '1.5rem', fontSize: '0.8rem', opacity: 0.5 }}>
-          Cliquez sur un jour disponible pour démarrer votre demande de réservation.
+        {/* Légende */}
+        <div style={{ marginTop: '1.5rem', display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ width: '10px', height: '10px', background: 'rgba(26,23,20,0.08)', display: 'inline-block' }} />
+            <span className="font-body text-charcoal" style={{ fontSize: '0.7rem', opacity: 0.5 }}>Non disponible</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <span style={{ width: '10px', height: '10px', background: 'rgba(181,120,90,0.1)', border: '1px solid rgba(181,120,90,0.3)', display: 'inline-block' }} />
+            <span className="font-body text-charcoal" style={{ fontSize: '0.7rem', opacity: 0.5 }}>Disponible</span>
+          </div>
+        </div>
+
+        <p className="font-body text-charcoal m-0" style={{ marginTop: '1rem', fontSize: '0.8rem', opacity: 0.4 }}>
+          Appuyez sur un jour disponible pour démarrer votre demande.
         </p>
       </main>
     </div>
