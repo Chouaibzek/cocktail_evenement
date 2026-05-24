@@ -59,7 +59,7 @@ export default function Reservation() {
   // Inject unavailable dates as events once data is loaded
   useEffect(() => {
     if (unavailableDates.size === 0) return
-    calendar.events.set(
+    calendar?.events.set(
       [...unavailableDates].map(date => ({
         id:         `unavailable-${date}`,
         title:      'Non disponible',
