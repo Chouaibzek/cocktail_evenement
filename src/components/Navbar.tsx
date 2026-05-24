@@ -8,7 +8,7 @@ const navLinks = [
   { label: 'ACCUEIL', to: '/' },
   { label: 'LA CARTE', to: '/carte' },
   { label: 'RÉSERVATION', to: '/reservation' },
-  { label: 'GALERIE', to: '#' },
+  { label: 'GALERIE', to: '/galerie' },
   { label: 'CONTACT', to: '/contact' },
 ]
 

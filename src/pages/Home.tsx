@@ -3,13 +3,13 @@ import testVideo from '../assets/video/visu_test_video.mp4'
 
 export default function Home() {
   return (
-    <div>
+    <div style={{ height: '100svh', overflow: 'hidden' }}>
       <Navbar />
 
       <section
         style={{
           position: 'relative',
-          height: '100vh',
+          height: '100%',
           overflow: 'hidden',
           display: 'flex',
           alignItems: 'flex-end',
