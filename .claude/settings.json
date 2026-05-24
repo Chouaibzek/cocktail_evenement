@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -n \"toLocaleDateString\" /c/Users/choua/FarmForGood/open-compass-mobile/app/farm/[id]/observation/[observation].tsx /c/Users/choua/FarmForGood/open-compass-mobile/app/farm/[id]/[parcel].tsx)",
+      "Bash(grep -n \"useMemo\" /c/Users/choua/FarmForGood/open-compass-mobile/app/farm/[id]/[parcel].tsx)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$CLAUDE_PROJECT_DIR\"/.claude/hooks/lint-fix.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
